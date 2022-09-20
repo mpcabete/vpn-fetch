@@ -1,9 +1,9 @@
 import { spawn, exec } from 'node:child_process'
 import got, { OptionsInit } from 'got'
 import path from 'path'
+import { fileURLToPath } from 'url'
 import chalk from 'chalk'
-import { readdir } from 'fs/promises'
-export class VpnGot {
+export class VPNFetch {
   tableId?: string
   interface?: string
   constructor(private configFile: string, private loginFile: string) {}
@@ -34,6 +34,9 @@ export class VpnGot {
     })
   }
   async connect() {
+    const __filename = fileURLToPath(import.meta.url)
+    const __dirname = path.dirname(__filename)
+
     return new Promise(async (resolve, reject) => {
       this.tableId = await this.getNewTableId()
 
@@ -45,7 +48,7 @@ export class VpnGot {
           '2',
           '--route-noexec',
           `--route-up`,
-          `'${path.resolve()}/route_up.sh`,
+          `'${__dirname}/route_up.sh`,
           `${this.tableId}'`,
           `--config`,
           `${this.configFile}`,
@@ -60,7 +63,7 @@ export class VpnGot {
           .split('\n')
           .forEach((line: string) => {
             const data = line.trim()
-            // console.log('data', data)
+            console.log('data', data)
             if (data.toString().includes('[[network interface]]')) {
               this.interface = data.toString().split(':')[1]?.trim()
               console.log('data.toString()', data.toString())
@@ -100,51 +103,7 @@ export class VpnGot {
     } else {
       opts.localAddress = this.interface
     }
-    console.log('opts',opts)
+    console.log('opts', opts)
     return await got.get(url, opts)
   }
-}
-
-async function test() {
- const {body} = await got.get("https://api.nordvpn.com/v1/servers/recommendations?filters\[country_id\]=81&limit=3")
- const servers = JSON.parse(body)
-
-   
-  const configFiles = await readdir('/etc/openvpn/ovpn_tcp')
-
-  const config = configFiles[Math.floor(Math.random() * configFiles.length)]
-  console.log('config',config)
-    const fex = new VpnGot(
-      '/etc/openvpn/ovpn_tcp/' +
-        config,
-      './configs/overplay'
-    )
-    await fex.connect()
-    const vpnsdata = await fex.get('https://ifconfig.me/ip')
-    console.log('vpndata', vpnsdata.body)
-
-  const config2 = configFiles[Math.floor(Math.random() * configFiles.length)]
-  console.log('config2',config2)
-    const fex2 = new VpnGot(
-      '/etc/openvpn/ovpn_tcp/' +
-        config2,
-      './configs/overplay'
-    )
-    await fex2.connect()
-    const vpnsdata2 = await fex2.get('https://ifconfig.me/ip')
-    console.log('vpndata', vpnsdata2.body)
-
-  const config3 = configFiles[Math.floor(Math.random() * configFiles.length)]
-  console.log('config3',config3)
-    const fex3 = new VpnGot(
-      '/etc/openvpn/ovpn_tcp/' +
-        config3,
-      './configs/overplay'
-    )
-    await fex3.connect()
-    const vpnsdata3 = await fex3.get('https://ifconfig.me/ip')
-    console.log('vpndata', vpnsdata3.body)
-}
-if (true) {
-  test()
 }
