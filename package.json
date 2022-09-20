@@ -1,0 +1,38 @@
+{
+  "devDependencies": {
+    "@types/chalk": "^2.2.0",
+    "@types/got": "^9.6.12",
+    "@types/node": "^18.7.18"
+  },
+  "dependencies": {
+    "chalk": "^5.0.1",
+    "got": "^12.5.0"
+  },
+  "name": "vpn-fetch",
+  "version": "1.0.0",
+  "description": "Start multiple vpn servers and make network requests through them",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mpcabete/vpn-fetch.git"
+  },
+  "keywords": [
+    "VPN",
+    "fetch",
+    "got",
+    "http",
+    "network",
+    "request",
+    "openvpn",
+    "node"
+  ],
+  "author": "Mateus C",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mpcabete/vpn-fetch/issues"
+  },
+  "homepage": "https://github.com/mpcabete/vpn-fetch#readme"
+}
