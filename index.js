@@ -3,7 +3,7 @@ import got from 'got';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import chalk from 'chalk';
-export class VPNFetch {
+export class VpnGot {
     configFile;
     loginFile;
     tableId;
