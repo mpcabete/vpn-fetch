@@ -8,6 +8,8 @@ export class VpnGot {
     loginFile;
     tableId;
     interface;
+    ovpnProcess;
+    pkillFind;
     constructor(configFile, loginFile) {
         this.configFile = configFile;
         this.loginFile = loginFile;
@@ -39,14 +41,10 @@ export class VpnGot {
     }
     async connect() {
         const __filename = fileURLToPath(import.meta.url);
-        // 👇️ "/home/john/Desktop/javascript"
         const __dirname = path.dirname(__filename);
-        console.log('directory-name 👉️', __dirname);
-        // 👇️ "/home/borislav/Desktop/javascript/dist/index.html"
-        console.log(path.join(__dirname, '/dist', 'index.html'));
         return new Promise(async (resolve, reject) => {
             this.tableId = await this.getNewTableId();
-            const ovpnClient = spawn('sudo', [
+            const startCommand = [
                 'openvpn',
                 '--script-security',
                 '2',
@@ -58,7 +56,12 @@ export class VpnGot {
                 `${this.configFile}`,
                 `--auth-user-pass`,
                 `${this.loginFile}`,
-            ], { env: { TABLE_ID: this.tableId.toString() }, shell: true });
+            ];
+            this.pkillFind = startCommand.join(' ').replace(/\'/g, '');
+            const ovpnClient = spawn('sudo', startCommand, {
+                env: { TABLE_ID: this.tableId.toString() },
+                shell: true,
+            });
             ovpnClient.stdout.on('data', (chunk) => {
                 chunk
                     .toString()
@@ -76,6 +79,7 @@ export class VpnGot {
                     }
                     if (data.toString().includes('Initialization Sequence Completed')) {
                         console.log(chalk.green(data.toString().trim()));
+                        this.ovpnProcess = ovpnClient;
                         resolve(this);
                     }
                 });
@@ -90,6 +94,15 @@ export class VpnGot {
                 console.log('openvpn exited with code', code);
             });
         });
+    }
+    disconnect() {
+        if (!this.pkillFind)
+            return false;
+        const command = `sudo pkill -SIGTERM -f '${this.pkillFind}'`;
+        exec(command);
+        this.ovpnProcess?.kill();
+        this.pkillFind = undefined;
+        return true;
     }
     async get(url, opts) {
         if (!opts) {

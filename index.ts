@@ -1,4 +1,4 @@
-import { spawn, exec } from 'node:child_process'
+import { spawn, exec, ChildProcess } from 'node:child_process'
 import got, { OptionsInit } from 'got'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -6,6 +6,9 @@ import chalk from 'chalk'
 export class VPNFetch {
   tableId?: string
   interface?: string
+  ovpnProcess?: ChildProcess
+  pkillFind?: string
+
   constructor(private configFile: string, private loginFile: string) {}
   async getNewTableId(): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -40,23 +43,26 @@ export class VPNFetch {
     return new Promise(async (resolve, reject) => {
       this.tableId = await this.getNewTableId()
 
-      const ovpnClient = spawn(
-        'sudo',
-        [
-          'openvpn',
-          '--script-security',
-          '2',
-          '--route-noexec',
-          `--route-up`,
-          `'${__dirname}/route_up.sh`,
-          `${this.tableId}'`,
-          `--config`,
-          `${this.configFile}`,
-          `--auth-user-pass`,
-          `${this.loginFile}`,
-        ],
-        { env: { TABLE_ID: this.tableId.toString() }, shell: true }
-      )
+      const startCommand = [
+        'openvpn',
+        '--script-security',
+        '2',
+        '--route-noexec',
+        `--route-up`,
+        `'${__dirname}/route_up.sh`,
+        `${this.tableId}'`,
+        `--config`,
+        `${this.configFile}`,
+        `--auth-user-pass`,
+        `${this.loginFile}`,
+      ]
+
+      this.pkillFind = startCommand.join(' ').replace(/\'/g, '')
+
+      const ovpnClient = spawn('sudo', startCommand, {
+        env: { TABLE_ID: this.tableId.toString() },
+        shell: true,
+      })
       ovpnClient.stdout.on('data', (chunk) => {
         chunk
           .toString()
@@ -78,6 +84,7 @@ export class VPNFetch {
             }
             if (data.toString().includes('Initialization Sequence Completed')) {
               console.log(chalk.green(data.toString().trim()))
+              this.ovpnProcess = ovpnClient
               resolve(this)
             }
           })
@@ -93,6 +100,15 @@ export class VPNFetch {
         console.log('openvpn exited with code', code)
       })
     })
+  }
+
+  disconnect() {
+    if (!this.pkillFind) return false
+    const command = `sudo pkill -SIGTERM -f '${this.pkillFind}'`
+    exec(command)
+    this.ovpnProcess?.kill()
+    this.pkillFind = undefined
+    return true
   }
 
   async get(url: string, opts?: OptionsInit): Promise<any> {
