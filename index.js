@@ -17,12 +17,12 @@ export class VPNFetch {
     async getNewTableId() {
         return new Promise((resolve, reject) => {
             const command = `ip route show table all | \\
-      grep 'table' | \\
+      grep "table" | \\
       sed 's/.*\\(table.*\\)/\\1/g' | \\
       awk '{print $2}' | \\
       sort | \\
       uniq | \\
-      grep -e '[0-9]'`;
+      grep -e "[0-9]"`;
             exec(command, (err, stdout) => {
                 if (err) {
                     console.log('err', err);
